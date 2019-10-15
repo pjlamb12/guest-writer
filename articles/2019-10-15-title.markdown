@@ -1,0 +1,469 @@
+---
+layout: post
+title: 'Angular + Auth0 + Netlify'
+description: "Many Angular applications need some form of authentication to protect different sections of the app. Auth0 is the perfect tool to do just that. But what makes these two awesome tools even better is a simple way to deploy the application, and that's where Netlify comes in. In just a few short minutes, you can create a new Angular application, secure it with Auth0, and deploy it to Netlify."
+date: '2019-10-15 08:30'
+author:
+    name: 'Preston Lamb'
+    url: 'prestonjlamb'
+    mail: 'preston.j.lamb@gmail.com'
+    avatar: 'https://twitter.com/prestonjlamb/profile_image?size=original'
+related:
+    - 2017-11-15-an-example-of-all-possible-elements
+---
+
+**TL;DR:** Many Angular applications need some form of authentication to protect different sections of the app. Auth0 is the perfect tool to do just that. But what makes these two awesome tools even better is a simple way to deploy the application, and that's where Netlify comes in. In just a few short minutes, you can create a new Angular application, secure it with Auth0, and deploy it to Netlify.
+
+## Deploying an Angular + Auth0 App to Netlify
+
+Auth0 has integrations with many languages, and frameworks, and Angular is no exception. Using the libraries that the team at Auth0 has created, you can secure your application and be confident that your users will be protected. The combination of security from Auth0 and route guards from Angular will prevent users that aren't logged in from getting into sensitive parts of your application.
+
+Once your application is completed, Netlify is a great place to deploy that application. There is no need to manage a server, NGINX, certificates, or scaling due to high traffic. Netlify makes it easy to build and deploy your application automatically when you push to certain branches, and best of all it's free in many situations.
+
+In this article, we'll create an application, secure it with Auth0 and route guards, and deploy it to Netlify. Let's go!
+
+## Create an Angular Project
+
+Let's start by creating our new Angular project. I'm going to use bootstrap for some styling, and you're welcome to do that as well. Run the following command in your terminal:
+
+```bash
+ng new ng-auth0-netlify --routing --style scss
+```
+
+After following the prompts, change into the new directory and install bootstrap:
+
+```bash
+cd ng-auth0-netlify
+npm i bootstrap
+```
+
+We now have a new Angular project. Include the bootstrap styles in the style file in the src directory like this:
+
+```scss
+@import '~node_modules/bootstrap/scss/bootstrap.scss';
+```
+
+Replace the default HTML in the `app.component.html` file with just the `router-outlet` component. Our application is now set up for routing, and we'll add the navigation bar later, so let's create the components we'll need for our routes in the application. For this demonstration, I'm just going to create two components, a `HomeComponent` and a `ProfileComponent`:
+
+```bash
+    ng g c home
+    ng g c profile
+```
+
+Add a little bit of content to those two components (it doesn't have to be much), and then register the routes in the `AppRoutingModule`.
+
+```ts
+const routes: Routes = [{ path: '', component: HomeComponent }, { path: 'profile', component: ProfileComponent }];
+```
+
+You should now be able to route between the home page and the profile page. Later on we'll lock the profile page down so that it can only be visited after logging in with Auth0.
+
+## Secure the Application with Auth0
+
+To secure the application with Auth0, we first need to create an application in our Auth0 dashboard. Once you've logged in, click on the "Create Application" button:
+
+![Create an application in Auth0 from the dashboard](./angular-netlify-images/create-auth0-application-dashboard.png)
+
+In the modal that pops up, name your application and select the type, in this case "Single Page Web Applications":
+
+![Create an application in Auth0 from the dashboard](./angular-netlify-images/auth0-create-name-application.png)
+
+Our application is now created on Auth0. The next step will be to add the authentication to our Angular application. Start by adding the Auth0 SDK through `npm` with the following command:
+
+```bash
+npm i @auth0/auth0-spa-js
+```
+
+Once that's installed, generate an Angular service called `AuthService`, like this:
+
+```bash
+ng g s auth
+```
+
+Open this new `AuthService` file and add this content to it:
+
+```ts
+import { Injectable } from '@angular/core';
+import createAuth0Client from '@auth0/auth0-spa-js';
+import Auth0Client from '@auth0/auth0-spa-js/dist/typings/Auth0Client';
+import { from, of, Observable, BehaviorSubject, combineLatest, throwError } from 'rxjs';
+import { tap, catchError, concatMap, shareReplay } from 'rxjs/operators';
+import { Router } from '@angular/router';
+
+@Injectable({
+	providedIn: 'root',
+})
+export class AuthService {
+	// Create an observable of Auth0 instance of client
+	auth0Client$ = (from(
+		createAuth0Client({
+			domain: 'YOUR_AUTH0_DOMAIN',
+			client_id: 'YOUR_AUTH0_APP_CLIENT_ID',
+			redirect_uri: `${window.location.origin}/callback`,
+		}),
+	) as Observable<Auth0Client>).pipe(
+		shareReplay(1), // Every subscription receives the same shared value
+		catchError(err => throwError(err)),
+	);
+	// Define observables for SDK methods that return promises by default
+	// For each Auth0 SDK method, first ensure the client instance is ready
+	// concatMap: Using the client instance, call SDK method; SDK returns a promise
+	// from: Convert that resulting promise into an observable
+	isAuthenticated$ = this.auth0Client$.pipe(
+		concatMap((client: Auth0Client) => from(client.isAuthenticated())),
+		tap(res => (this.loggedIn = res)),
+	);
+	handleRedirectCallback$ = this.auth0Client$.pipe(
+		concatMap((client: Auth0Client) => from(client.handleRedirectCallback())),
+	);
+	// Create subject and public observable of user profile data
+	private userProfileSubject$ = new BehaviorSubject<any>(null);
+	userProfile$ = this.userProfileSubject$.asObservable();
+	// Create a local property for login status
+	loggedIn: boolean = null;
+
+	constructor(private router: Router) {}
+
+	// When calling, options can be passed if desired
+	// https://auth0.github.io/auth0-spa-js/classes/auth0client.html#getuser
+	getUser$(options?): Observable<any> {
+		return this.auth0Client$.pipe(
+			concatMap((client: Auth0Client) => from(client.getUser(options))),
+			tap(user => this.userProfileSubject$.next(user)),
+		);
+	}
+
+	localAuthSetup() {
+		// This should only be called on app initialization
+		// Set up local authentication streams
+		const checkAuth$ = this.isAuthenticated$.pipe(
+			concatMap((loggedIn: boolean) => {
+				if (loggedIn) {
+					// If authenticated, get user and set in app
+					// NOTE: you could pass options here if needed
+					return this.getUser$();
+				}
+				// If not authenticated, return stream that emits 'false'
+				return of(loggedIn);
+			}),
+		);
+		checkAuth$.subscribe((response: { [key: string]: any } | boolean) => {
+			// If authenticated, response will be user object
+			// If not authenticated, response will be 'false'
+			this.loggedIn = !!response;
+		});
+	}
+
+	login(redirectPath: string = '/') {
+		// A desired redirect path can be passed to login method
+		// (e.g., from a route guard)
+		// Ensure Auth0 client instance exists
+		this.auth0Client$.subscribe((client: Auth0Client) => {
+			// Call method to log in
+			client.loginWithRedirect({
+				redirect_uri: `${window.location.origin}/callback`,
+				appState: { target: redirectPath },
+			});
+		});
+	}
+
+	handleAuthCallback() {
+		// Only the callback component should call this method
+		// Call when app reloads after user logs in with Auth0
+		let targetRoute: string; // Path to redirect to after login processsed
+		const authComplete$ = this.handleRedirectCallback$.pipe(
+			// Have client, now call method to handle auth callback redirect
+			tap(cbRes => {
+				// Get and set target redirect route from callback results
+				targetRoute = cbRes.appState && cbRes.appState.target ? cbRes.appState.target : '/';
+			}),
+			concatMap(() => {
+				// Redirect callback complete; get user and login status
+				return combineLatest(this.getUser$(), this.isAuthenticated$);
+			}),
+		);
+		// Subscribe to authentication completion observable
+		// Response will be an array of user and login status
+		authComplete$.subscribe(([user, loggedIn]) => {
+			// Redirect to target route after callback processing
+			this.router.navigate([targetRoute]);
+		});
+	}
+
+	logout() {
+		// Ensure Auth0 client instance exists
+		this.auth0Client$.subscribe((client: Auth0Client) => {
+			// Call method to log out
+			client.logout({
+				client_id: 'YOUR_AUTH0_APP_CLIENT_ID',
+				returnTo: `${window.location.origin}`,
+			});
+		});
+	}
+}
+```
+
+This service provides all the needed methods for logging in and out, getting the user's profile data, handling authentication callbacks, and managing authentication data in the Angular app on app initialization.
+
+The next step is to modify the `app.component.ts` file to set up authentication when the application is reloaded. This is needed because when a single page application reloads, anything stored in app memory is cleared. Since that's where our authentication information is stored, we would normally lose our authentication data. To get around this, we'll call the `localAuthSetup()` function from our `AuthService` so that the data can be restored if necessary. Open the `app.component.ts` file and add the following content:
+
+```ts
+import { Component, OnInit } from '@angular/core';
+import { AuthService } from './auth.service';
+
+@Component({
+	selector: 'app-root',
+	templateUrl: './app.component.html',
+	styleUrls: ['./app.component.css'],
+})
+export class AppComponent implements OnInit {
+	constructor(private auth: AuthService) {}
+
+	ngOnInit() {
+		this.auth.localAuthSetup();
+	}
+}
+```
+
+Let's next add a navbar component:
+
+```bash
+ng g c navbar
+```
+
+Open the `navbar.component.ts` file and add the following content to it:
+
+```ts
+import { Component, OnInit } from '@angular/core';
+import { AuthService } from '../auth.service';
+
+@Component({
+	selector: 'app-navbar',
+	templateUrl: './navbar.component.html',
+	styleUrls: ['./navbar.component.css'],
+})
+export class NavbarComponent implements OnInit {
+	constructor(public auth: AuthService) {}
+
+	ngOnInit() {}
+}
+```
+
+In the HTML for the `NavbarComponent`, add the following:
+
+```html
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+	<a class="navbar-brand" routerLink="/">Auth0 + Netlify</a>
+	<button
+		class="navbar-toggler"
+		type="button"
+		data-toggle="collapse"
+		data-target="#navbarNav"
+		aria-controls="navbarNav"
+		aria-expanded="false"
+		aria-label="Toggle navigation"
+	>
+		<span class="navbar-toggler-icon"></span>
+	</button>
+	<div class="collapse navbar-collapse" id="navbarNav">
+		<ul class="navbar-nav">
+			<li class="nav-item active">
+				<a class="nav-link" routerLink="/">Home</a>
+			</li>
+			<li class="nav-item">
+				<a class="nav-link" routerLink="/profile">Profile</a>
+			</li>
+			<li class="nav-item">
+				<button class="btn btn-primary" (click)="auth.login()" *ngIf="!auth.loggedIn">Log In</button>
+			</li>
+			<li class="nav-item">
+				<button class="btn btn-primary" (click)="auth.logout()" *ngIf="auth.loggedIn">Log Out</button>
+			</li>
+		</ul>
+	</div>
+</nav>
+```
+
+Add this `NavbarComponent` to the `app.component.html` file above the `router-outlet`:
+
+```html
+<app-navbar></app-navbar> <router-outlet></router-outlet>
+```
+
+When you login to an application using Auth0, it's best if there's a route that is used just for the authentication callback. When we go to that route, the authentication response is handled and the data is stored in the application. Let's create a component that we can use for that purpose:
+
+```bash
+ng g c callback
+```
+
+In the `callback.component.ts` file, add the following code:
+
+```ts
+import { Component, OnInit } from '@angular/core';
+import { AuthService } from '../auth.service';
+
+@Component({
+	selector: 'app-callback',
+	templateUrl: './callback.component.html',
+	styleUrls: ['./callback.component.css'],
+})
+export class CallbackComponent implements OnInit {
+	constructor(private auth: AuthService) {}
+
+	ngOnInit() {
+		this.auth.handleAuthCallback();
+	}
+}
+```
+
+The `handleAuthCallback()` function call in that `CallbackComponent` will make sure that we are logged in and the data stored. Let's add this component to our `app-routing.module.ts` file so that the application knows about it:
+
+```ts
+const routes: Routes = [...,{ path: 'callback', component: CallbackComponent }];
+```
+
+Let's also edit the profile component we created earlier slightly. We want to output the logged in user's actual user profile from Auth0. Replace the content in the `profile.component.ts` file with the following:
+
+```ts
+import { Component, OnInit } from '@angular/core';
+import { AuthService } from '../auth.service';
+
+@Component({
+	selector: 'app-profile',
+	templateUrl: './profile.component.html',
+	styleUrls: ['./profile.component.css'],
+})
+export class ProfileComponent implements OnInit {
+	constructor(public auth: AuthService) {}
+
+	ngOnInit() {}
+}
+```
+
+Next, add the following to the `profile.component.html` file:
+
+```html
+<pre *ngIf="auth.userProfile$ | async as profile">
+<code>{{ profile | json }}</code>
+</pre>
+```
+
+At this point, we have the authentication all set up, with a profile route, being able to log in and out, and having your authentication status restored when the app loads. But the only problem is that we can go to the `/profile` route before we're logged in. We don't want this to happen, so we're going to add a route guard to prevent that. Create the route guard using the CLI:
+
+```bash
+ng g g auth
+```
+
+You should see a prompt asking you which interfaces you would like to implement. Select `CanActivate`, and then continue. After the guard is created, open the `auth.guard.ts` file and replace its contents with the following:
+
+```ts
+import { Injectable } from '@angular/core';
+import { ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree, CanActivate } from '@angular/router';
+import { Observable } from 'rxjs';
+import { AuthService } from './auth.service';
+import { tap } from 'rxjs/operators';
+
+@Injectable({
+	providedIn: 'root',
+})
+export class AuthGuard implements CanActivate {
+	constructor(private auth: AuthService) {}
+
+	canActivate(
+		next: ActivatedRouteSnapshot,
+		state: RouterStateSnapshot,
+	): Observable<boolean> | Promise<boolean | UrlTree> | boolean {
+		return this.auth.isAuthenticated$.pipe(
+			tap(loggedIn => {
+				if (!loggedIn) {
+					this.auth.login(state.url);
+				}
+			}),
+		);
+	}
+}
+```
+
+The last step is to add the guard to the `/profile` route. Open the `app-routing.module.ts` file and change the `/profile` route definition to the following:
+
+```ts
+const routes: Routes = [
+	...,
+	{
+		path: 'profile',
+		component: ProfileComponent,
+		canActivate: [AuthGuard]
+	},
+	...
+]
+```
+
+This adds the `AuthGuard` to that route, meaning that if the `AuthGuard` returns true when called, the user will be able to continue on to the route. If it returns false, they will be redirected to log in.
+
+You should now be able to serve your application and try it out. If you run into any problems, go back through the steps from above, or check out the full quick start on Auth0's site.
+
+We now have our Angular app to a point where we can push it to GitHub. Add and commit all your files. We'll push the project to GitHub in a minute.
+
+```bash
+    git add .
+    git commit -m "My Angular + Auth0 + Netlify project"
+```
+
+## Netlify Redirect Configuration
+
+Before we push our code to the GitHub repository, we need to configure Netlify redirects to work with our application. In single page applications like Angular, routing is handled by the application itself, not by redirecting to new pages on the actual server. So the application can route around until you refresh the app. If you refresh the app on any page besides an empty route, Netlify will not be able to find the route. We can fix this by telling Netlify where to find each route in our application. In essence, we send every route back to the Angular app by telling Netlify that all routes really just need to be sent to the `index.html` file of the app.
+
+All Netlify will expect for this to work is a `_redirects` file in the root of the deployed app. The contents of that file should be:
+
+```
+/*    /index.html    200
+```
+
+Again, this just says to Netlify that every route should just return the `index.html` file. That way Angular can handle the routing.
+
+After adding the file, we need to make sure it's included in the build. The easiest way to do that is to edit the `angular.json` file. If we add the path to this file to the assets array by the `favicon.ico`, it will be included in the build of the application. Make these changes and we'll be one step closer to a deployed application.
+
+## Create the GitHub Repository
+
+Let's now go to GitHub and create a new repository.
+
+![](./angular-netlify-images/create-auth0-netlify-repo.png)
+
+Now we'll run the following commands back in our terminal, which will push our Angular project to our newly created GitHub repository:
+
+```bash
+    git remote add origin git@github.com:pjlamb12/my-ng-auth0-netlify-project.git
+    git push -u origin master
+```
+
+> Don't forget to change the `git@github.com:pjlamb12/my-ng-auth0-netlify-project.git` to the URL given to you by GitHub
+
+Our project is now in our GitHub repository!
+
+## Configure Netlify to Build and Deploy Our App
+
+The next step is to setup Netlify to build and deploy our application. We'll connect our new GitHub repository to Netlify and choose the build options. After we've done that, Netlify will build and deploy our application each time we push to the master branch. Let's go to [app.netlify.com](http://app.netlify.com) and get started.
+
+> If you haven't signed up for Netlify yet, go through the steps to create an account. It's free, and you can sign up easily with your GitHub account.
+
+After you log in, click on the "New site from Git" button on the page. You should see this screen after clicking on that button:
+
+![](./angular-netlify-images/create-netlify-site-c320225f-563d-49c3-b471-83156b9136a6.png)
+
+Choose a git provider for continuous deployment, which will be GitHub if you've been following along. Once you select your git provider, you can search for the repository where your project is located (my-ng-auth0-netlify)
+
+![](./angular-netlify-images/netlify-ng-auth0-build-config.png)
+
+Netlify lets you select the team (if you're part of more than one) and which branch should be used for the builds. For the build command, enter `ng build --prod`. If you have a different configuration you're using besides production, you can alter that build command by using the `--configuration` flag. Before clicking the deploy site button, make sure to enter the location of the publish directory. The default location for the publish directory will be in the `dist/project-name` folder. In our case, that's `dist/my-ng-auth0-netlify`. Enter that in the field, and then click on the deploy site button.
+
+After filling out that form and clicking deploy site, Netlify will take you to the project overview page. You should see a message at the top of the page saying that the application is deploying. You can also click on the "Deploys" menu item and select the most recent to watch the build progress.
+
+On the overview page, there's also an automatically generated site ID. That site ID will be part of how you will be able to access the site. The URL will be generated-site-id.netlify.com. You can change that site name on the settings page, in the general information section. The only requirement is that the name be unique. Changing the name will help you to be able to remember where to see your site. You can also go to the "Domain Management" section of the site settings and configure a custom domain name for the site.
+
+One other thing that you'll need to do once you've finalized your site name (whether a custom domain, changing the automatically generated site ID or using the automatically generated site ID) is add the URL as a callback URL in the Auth0 settings for your application. You will not be able to log in without doing this.
+
+Once your application has finished building and is deployed, visit the site and make sure that you can log in using Auth0 and that you can route between the home page and the profile page. It should work just like the site did on your local machine. You should be able to start on the home page and click back and forth between the home link and the profile link. Pretty great, huh?
+
+## Conclusion
+
+Netlify is a cheap, easy way to deploy our Angular applications, and with a service like Auth0 we can limit access to the application as well. With tools like Netlify's Functions, we could build a full-fledged app without needing to manage servers or complex build processes. This is a perfect option for companies that are just starting and don't have the capacity to manage servers.
