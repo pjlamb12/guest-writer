@@ -582,7 +582,7 @@ After you log in, click on the "New site from Git" button on the page. You shoul
 
 ![](./angular-netlify-images/create-netlify-site-c320225f-563d-49c3-b471-83156b9136a6.png)
 
-Choose a git provider for continuous deployment, which will be GitHub if you've been following along. Once you select your git provider, you can search for the repository where your project is located (`ng-auth0-netlify`)
+Choose a git provider for continuous deployment, which will be GitHub if you've been following along. After selecting GitHub, you may be required to install the Netlify application for GitHub and authorize it on your account. Once you've done this, you can search for the repository where your project is located (`ng-auth0-netlify`).
 
 ![](./angular-netlify-images/netlify-ng-auth0-build-config.png)
 
