@@ -142,7 +142,7 @@ In the modal that pops up, name your application and select the type, in this ca
 
 ![Create an application in Auth0 from the dashboard](./angular-netlify-images/auth0-create-name-application.png)
 
-Your application is now created on Auth0. Before going back to work on the application, we need to add a callback URL that the Auth0 application will recognize and use for authenticating our app when running it on localhost. You can add the callback URL to the "Allowed Callback URLs" box on the Auth0 application settings tab. The value you should start with in that box is `http://localhost:4200/callback`. After deploying to Netlify, we'll add another callback for the deployed application.
+Your application is now created on Auth0. Before going back to work on the application, you need to add a callback URL that the Auth0 application will recognize and use for authenticating our app when running it on localhost. You can add the callback URL to the "Allowed Callback URLs" box on the Auth0 application settings tab. The value you should start with in that box is `http://localhost:4200/callback`. After deploying to Netlify, you'll add another callback for the deployed application.
 
 The next step will be to add the authentication to your Angular application. Start by adding the Auth0 SDK through `npm` with the following command:
 
@@ -285,7 +285,7 @@ This service provides all the needed methods for logging in and out, getting the
 
 There are two parts of the provided code for the `AuthService` that you'll need to change. Those are the `client_id` and the `domain`. The placeholder text there is `YOUR_AUTH0_APP_CLIENT_ID` and `YOUR_AUTH0_DOMAIN`. You'll need to replace those placeholder values with the values from the Auth0 application settings tab.
 
-The next step is to modify the `src/app/app.component.ts` file to set up authentication when the application is reloaded. This is needed because when a single page application reloads, anything stored in app memory is cleared. Since that's where our authentication information is stored, we would normally lose our authentication data. To get around this, we'll call the `localAuthSetup()` function from our `AuthService` so that the data can be restored if necessary. Open the `src/app/app.component.ts` file and add the following content:
+The next step is to modify the `src/app/app.component.ts` file to set up authentication when the application is reloaded. This is needed because when a single page application reloads, anything stored in app memory is cleared. Since that's where our authentication information is stored, you would normally lose our authentication data. To get around this, you'll call the `localAuthSetup()` function from our `AuthService` so that the data can be restored if necessary. Open the `src/app/app.component.ts` file and add the following content:
 
 ```ts
 // src/app/app.component.ts
@@ -381,7 +381,7 @@ Add this `NavbarComponent` to the `src/app/app.component.html` file above the `r
 </div>
 ```
 
-When you log in to an application using Auth0, it's best if there's a route that is used just for the authentication callback. When we go to that route, the authentication response is handled and the data is stored in the application. Go ahead and create a component that can be used for that purpose:
+When you log in to an application using Auth0, it's best if there's a route that is used just for the authentication callback. When you go to that route, the authentication response is handled and the data is stored in the application. Go ahead and create a component that can be used for that purpose:
 
 ```bash
 ng generate component callback
@@ -600,4 +600,4 @@ Once your application has finished building and is deployed, visit the site and 
 
 ## Conclusion
 
-Netlify is an inexpensive, easy way to deploy our Angular applications, and with a service like Auth0, we can limit access to the application as well. With tools like Netlify's Functions, we could build a full-fledged app without needing to manage servers or complex build processes. This is a perfect option for companies that are just starting and don't have the capacity to manage servers. You can find a repository with all the necessary, working code for this demo [here](https://github.com/pjlamb12/my-ng-auth0-netlify). This application is deployed on Netlify and available at [pjlamb12.ng-auth0.netlify.com](https://pjlamb12.ng-auth0.netlify.com).
+Netlify is an inexpensive, easy way to deploy Angular applications, and with a service like Auth0, you can limit access to the application as well. With tools like Netlify's Functions, you could build a full-fledged app without needing to manage servers or complex build processes. This is a perfect option for companies that are just starting and don't have the capacity to manage servers. You can find a repository with all the necessary, working code for this demo [here](https://github.com/pjlamb12/my-ng-auth0-netlify). This application is deployed on Netlify and available at [pjlamb12.ng-auth0.netlify.com](https://pjlamb12.ng-auth0.netlify.com).
