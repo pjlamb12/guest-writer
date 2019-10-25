@@ -14,7 +14,7 @@ related:
 
 **TL;DR:** Many Angular applications need some form of authentication to protect different sections of the app. Auth0 is the perfect tool to do just that. But what makes these two awesome tools even better is a simple way to deploy the application, and that's where Netlify comes in. In just a few short minutes, you can create a new Angular application, secure it with Auth0, and deploy it to Netlify.
 
-## Deploying an Angular + Auth0 App to Netlify
+## Deploying an Angular with Auth0 App to Netlify
 
 Auth0 has integrations with many languages and frameworks, and Angular is no exception. Using the libraries that the team at Auth0 has created, you can secure your application and be confident that your users' data will be protected. The combination of security from Auth0 and route guards from Angular will prevent users that aren't logged in from getting into sensitive parts of your application.
 
@@ -134,7 +134,7 @@ The `--open` flag will open your browser to `http://localhost:4200` once the app
 
 ## Secure the Application with Auth0
 
-To secure the application with Auth0, you first need to create an application in your Auth0 dashboard. Once you've logged in, click on the "Create Application" button:
+To secure the application with Auth0, you first need to create an application in your [Auth0 dashboard](https://manage.auth0.com/). If you haven't an Auth0 account, you can <a href="https://auth0.com/signup" data-amp-replace="CLIENT_ID" data-amp-addparams="anonId=CLIENT_ID(cid-scope-cookie-fallback-name)">sign up for a free one</a>. Once you've logged in, click on the "Create Application" button:
 
 ![Create an application in Auth0 from the dashboard](./angular-netlify-images/create-auth0-application-dashboard.png)
 
@@ -142,7 +142,7 @@ In the modal that pops up, name your application and select the type, in this ca
 
 ![Create an application in Auth0 from the dashboard](./angular-netlify-images/auth0-create-name-application.png)
 
-Your application is now created on Auth0. Before going back to work on the application, you need to add a callback URL that the Auth0 application will recognize and use for authenticating our app when running it on localhost. You can add the callback URL to the "Allowed Callback URLs" box on the Auth0 application settings tab. The value you should start with in that box is `http://localhost:4200/callback`. After deploying to Netlify, you'll add another callback for the deployed application.
+Your application is now created on Auth0. Before going back to work on the application, you need to add a callback URL that the Auth0 application will recognize and use for authenticating your app when running it on localhost. You can add the callback URL to the "Allowed Callback URLs" box on the Auth0 application settings tab. The value you should start with in that box is `http://localhost:4200/callback`. After deploying to Netlify, you'll add another callback for the deployed application.
 
 The next step will be to add the authentication to your Angular application. Start by adding the Auth0 SDK through `npm` with the following command:
 
@@ -285,7 +285,7 @@ This service provides all the needed methods for logging in and out, getting the
 
 There are two parts of the provided code for the `AuthService` that you'll need to change. Those are the `client_id` and the `domain`. The placeholder text there is `YOUR_AUTH0_APP_CLIENT_ID` and `YOUR_AUTH0_DOMAIN`. You'll need to replace those placeholder values with the values from the Auth0 application settings tab.
 
-The next step is to modify the `src/app/app.component.ts` file to set up authentication when the application is reloaded. This is needed because when a single page application reloads, anything stored in app memory is cleared. Since that's where our authentication information is stored, you would normally lose our authentication data. To get around this, you'll call the `localAuthSetup()` function from our `AuthService` so that the data can be restored if necessary. Open the `src/app/app.component.ts` file and add the following content:
+The next step is to modify the `src/app/app.component.ts` file to set up authentication when the application is reloaded. This is needed because when a single page application reloads, anything stored in app memory is cleared. Since that's where your authentication information is stored, you would normally lose your authentication data. To get around this, you'll call the `localAuthSetup()` function from the `AuthService` so that the data can be restored if necessary. Open the `src/app/app.component.ts` file and add the following content:
 
 ```ts
 // src/app/app.component.ts
@@ -307,7 +307,7 @@ export class AppComponent implements OnInit {
 }
 ```
 
-Let's next add a navbar component:
+Now, add a navbar component:
 
 ```bash
 ng generate component navbar
@@ -420,7 +420,7 @@ const routes: Routes = [
 ];
 ```
 
-Next, update the profile component template to output the logged in user's profile information. Replace the contents of the `src/app/profile/profile.component.ts` file with the following:
+Next, update the profile component template to output the logged-in user's profile information. Replace the contents of the `src/app/profile/profile.component.ts` file with the following:
 
 ```ts
 // src/app/profile/profile.component.ts
@@ -506,7 +506,7 @@ const routes: Routes = [
 
 This adds the `AuthGuard` to that route, meaning that if the `AuthGuard` service returns true when called, the user will be able to continue on to the route. If it returns false, they will be redirected to log in.
 
-You should now be able to serve your application and try it out. If you run into any problems, go back through the steps from above, or check out the full quick start on Auth0's site.
+You should now be able to serve your application and try it out. If you run into any problems, go back through the steps from above, or [check out the full quick start on Auth0's site](https://auth0.com/docs/quickstart/spa/angular2/01-login).
 
 You now have an Angular app to a point where it can be pushed to GitHub. Add and commit all your files. You'll push the project to GitHub in a minute.
 
@@ -517,7 +517,7 @@ You now have an Angular app to a point where it can be pushed to GitHub. Add and
 
 ## Netlify Redirect Configuration
 
-Before you push our code to the GitHub repository, you will need to configure Netlify redirects to work with our application. In single page applications like the ones you can build with Angular, routing is handled by the application itself, not by redirecting to new pages on the actual server. So the application can route around until you refresh the app. If you refresh the app on any page besides an empty route, Netlify will not be able to find the route. You can fix this by telling Netlify where to find each route in your application. In essence, every route will be sent back to the Angular app by telling Netlify that all routes really just need to be sent to the `index.html` file of the app.
+Before you push your code to the GitHub repository, you will need to configure Netlify redirects to work with your application. In single page applications like the ones you can build with Angular, routing is handled by the application itself, not by redirecting to new pages on the actual server. So the application can route around until you refresh the app. If you refresh the app on any page besides an empty route, Netlify will not be able to find the route. You can fix this by telling Netlify where to find each route in your application. In essence, every route will be sent back to the Angular app by telling Netlify that all routes really just need to be sent to the `index.html` file of the app.
 
 All Netlify will expect for this to work is a `_redirects` file in the root of the deployed app. The contents of that file should be:
 
@@ -559,7 +559,7 @@ After adding the file, you need to make sure it's included in the build. The eas
 
 Now it's time to go to GitHub and create a new repository.
 
-![](./angular-netlify-images/create-auth0-netlify-repo.png)
+![Create a new GitHub repository](./angular-netlify-images/create-auth0-netlify-repo.png)
 
 Run the following commands back in your terminal, which will push your Angular project to the newly created GitHub repository:
 
@@ -570,9 +570,9 @@ Run the following commands back in your terminal, which will push your Angular p
 
 > Don't forget to change the `git@github.com:pjlamb12/my-ng-auth0-netlify-project.git` to the URL given to you by GitHub
 
-Yur project is now in a GitHub repository!
+Your project is now in a GitHub repository!
 
-## Configure Netlify to Build and Deploy Our App
+## Configure Netlify to Build and Deploy your App
 
 The next step is to setup Netlify to build and deploy your application. You'll need to connect your new GitHub repository to Netlify and choose the build options. After doing that, Netlify will build and deploy your application each time updates are pushed to the master branch. Go to [app.netlify.com](http://app.netlify.com) and get started.
 
@@ -580,21 +580,21 @@ The next step is to setup Netlify to build and deploy your application. You'll n
 
 After you log in, click on the "New site from Git" button on the page. You should see this screen after clicking on that button:
 
-![](./angular-netlify-images/create-netlify-site-c320225f-563d-49c3-b471-83156b9136a6.png)
+![Create a new Netify website](./angular-netlify-images/create-netlify-site-c320225f-563d-49c3-b471-83156b9136a6.png)
 
 Choose a git provider for continuous deployment, which will be GitHub if you've been following along. After selecting GitHub, you may be required to install the Netlify application for GitHub and authorize it on your account. Once you've done this, you can search for the repository where your project is located (`ng-auth0-netlify`).
 
-![](./angular-netlify-images/netlify-ng-auth0-build-config.png)
+![Choose the GitHub repository for Netlify](./angular-netlify-images/netlify-ng-auth0-build-config.png)
 
-Netlify lets you select the team (if you're part of more than one) and which branch should be used for the builds. For the build command, enter `ng build --prod`. If you have a different configuration you're using besides production, you can alter that build command by using the `--configuration` flag. Before clicking the deploy site button, make sure to enter the location of the publish directory. The default location for the publish directory will be in the `dist/project-name` folder. In our case, that's `dist/ng-auth0-netlify`. Enter that in the field, and then click on the deploy site button.
+Netlify lets you select the team (if you're part of more than one) and which branch should be used for the builds. For the build command, enter `ng build --prod`. If you have a different configuration you're using besides production, you can alter that build command by using the `--configuration` flag. Before clicking the deploy site button, make sure to enter the location of the publish directory. The default location for the publish directory will be in the `dist/project-name` folder. In your case, that's `dist/ng-auth0-netlify`. Enter that in the field, and then click on the deploy site button.
 
 After filling out that form and clicking deploy site, Netlify will take you to the project overview page. You should see a message at the top of the page saying that the application is deploying. You can also click on the "Deploys" menu item and select the most recent to watch the build progress.
 
-![](./angular-netlify-images/netlify-build-in-progress.png)
+![Build in progress on Netlify](./angular-netlify-images/netlify-build-in-progress.png)
 
-On the overview page, there's also an automatically generated site ID. That site ID will be part of how you will be able to access the site. The URL will be generated-site-id.netlify.com. In the image above, you can see that the automatically generated site ID was "angry-stonebraker-390db1". You can change that site name on the settings page, in the general information section. The only requirement is that the name be unique. Changing the name will help you to be able to remember where to see your site. You can also go to the "Domain Management" section of the site settings and configure a custom domain name for the site.
+On the overview page, there's also an automatically generated site ID. That site ID will be part of how you will be able to access the site. The URL will be _generated-site-id.netlify.com_. In the image above, you can see that the automatically generated site ID was "angry-stonebraker-390db1". You can change that site name on the settings page, in the general information section. The only requirement is that the name be unique. Changing the name will help you to be able to remember where to see your site. You can also go to the "Domain Management" section of the site settings and configure a custom domain name for the site.
 
-One other thing that you'll need to do once you've finalized your site name (whether a custom domain, changing the automatically generated site ID or using the automatically generated site ID) is add the URL as a callback URL in the Auth0 settings for your application. You will not be able to log in without doing this. You'll add this to the same location you added `http://localhost:4200" as a callback. That's on the Auth0 app settings page.
+One other thing that you'll need to do once you've finalized your site name (whether a custom domain, changing the automatically generated site ID or using the automatically generated site ID) is add the URL as a callback URL in the Auth0 settings for your application. You will not be able to log in without doing this. You'll add this to the same location you added `http://localhost:4200` as a callback. That's on the Auth0 app settings page.
 
 Once your application has finished building and is deployed, visit the site and make sure that you can log in using Auth0 and that you can route between the home page and the profile page. It should work just like the site did on your local machine. You should be able to start on the home page and click back and forth between the home link and the profile link. Pretty great, huh?
 
