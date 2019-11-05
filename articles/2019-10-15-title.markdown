@@ -33,13 +33,13 @@ npm install -g @angular/cli
 Once you're sure the CLI is installed on your computer, run the following command in your terminal:
 
 ```bash
-ng new ng-auth0-netlify --routing --style scss
+ng new my-ng-auth0-netlify --routing --style scss
 ```
 
 This command creates a new Angular application. The `--routing` flag initiates routing in the app, and the `--style scss` flag sets the app's style file extensions to SCSS. After running the command, change into the new directory and install bootstrap:
 
 ```bash
-cd ng-auth0-netlify
+cd my-ng-auth0-netlify
 npm install bootstrap
 ```
 
@@ -535,7 +535,7 @@ After adding the file, you need to make sure it's included in the build. The eas
 {
 	...
 	"projects": {
-		"ng-auth0-netlify": {
+		"my-ng-auth0-netlify": {
 			...
 			"architect": {
 				"build": {
@@ -580,19 +580,19 @@ The next step is to setup Netlify to build and deploy your application. You'll n
 
 After you log in, click on the "New site from Git" button on the page. You should see this screen after clicking on that button:
 
-![](./angular-netlify-images/create-netlify-site-c320225f-563d-49c3-b471-83156b9136a6.png)
+![](./angular-netlify-images/create-netlify-site.png)
 
-Choose a git provider for continuous deployment, which will be GitHub if you've been following along. After selecting GitHub, you may be required to install the Netlify application for GitHub and authorize it on your account. Once you've done this, you can search for the repository where your project is located (`ng-auth0-netlify`).
+Choose a git provider for continuous deployment, which will be GitHub if you've been following along. After selecting GitHub, you may be required to install the Netlify application for GitHub and authorize it on your account. Once you've done this, you can search for the repository where your project is located (`my-ng-auth0-netlify`).
 
 ![](./angular-netlify-images/netlify-ng-auth0-build-config.png)
 
-Netlify lets you select the team (if you're part of more than one) and which branch should be used for the builds. For the build command, enter `ng build --prod`. If you have a different configuration you're using besides production, you can alter that build command by using the `--configuration` flag. Before clicking the deploy site button, make sure to enter the location of the publish directory. The default location for the publish directory will be in the `dist/project-name` folder. In our case, that's `dist/ng-auth0-netlify`. Enter that in the field, and then click on the deploy site button.
+Netlify lets you select the team (if you're part of more than one) and which branch should be used for the builds. For the build command, enter `ng build --prod`. If you have a different configuration you're using besides production, you can alter that build command by using the `--configuration` flag. Before clicking the deploy site button, make sure to enter the location of the publish directory. The default location for the publish directory will be in the `dist/project-name` folder. In our case, that's `dist/my-ng-auth0-netlify`. Enter that in the field, and then click on the deploy site button.
 
 After filling out that form and clicking deploy site, Netlify will take you to the project overview page. You should see a message at the top of the page saying that the application is deploying. You can also click on the "Deploys" menu item and select the most recent to watch the build progress.
 
 ![](./angular-netlify-images/netlify-build-in-progress.png)
 
-On the overview page, there's also an automatically generated site ID. That site ID will be part of how you will be able to access the site. The URL will be generated-site-id.netlify.com. In the image above, you can see that the automatically generated site ID was "angry-stonebraker-390db1". You can change that site name on the settings page, in the general information section. The only requirement is that the name be unique. Changing the name will help you to be able to remember where to see your site. You can also go to the "Domain Management" section of the site settings and configure a custom domain name for the site.
+On the overview page, there's also an automatically generated site ID. That site ID will be part of how you will be able to access the site. The URL will be generated-site-id.netlify.com. In the image above, you can see that the automatically generated site ID was "sad-fermi-0e08cb". You can change that site name on the settings page, in the general information section. The only requirement is that the name be unique. Changing the name will help you to be able to remember where to see your site. You can also go to the "Domain Management" section of the site settings and configure a custom domain name for the site.
 
 One other thing that you'll need to do once you've finalized your site name (whether a custom domain, changing the automatically generated site ID or using the automatically generated site ID) is add the URL as a callback URL in the Auth0 settings for your application. You will not be able to log in without doing this. You'll add this to the same location you added `http://localhost:4200" as a callback. That's on the Auth0 app settings page.
 
